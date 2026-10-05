@@ -1,0 +1,18 @@
+{
+    "name": "amtx",
+    "version": "0.1.0",
+    "description": "micro:bit V2 AM送信実験 (PWM搬送波 + ADC音声)",
+    "files": [
+        "README.md",
+        "amtx.ts",
+        "amtx.cpp"
+    ],
+    "testFiles": [],
+    "public": true,
+    "dependencies": {
+        "core": "*"
+    },
+    "supportedTargets": [
+        "microbit"
+    ]
+}
