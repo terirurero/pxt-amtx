@@ -1,5 +1,11 @@
 #include "pxt.h"
 
+#if defined(__has_include)
+#if __has_include("nrf.h")
+#include "nrf.h"
+#endif
+#endif
+
 // micro:bit V2 (nRF52833) 専用。PWMで搬送波を作り、ADCで読んだ音声で
 // デューティ比を変えてAM風の変調をかける。V1ビルドでは何もしない。
 

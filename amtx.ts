@@ -10,7 +10,7 @@ namespace amtx {
     //% shim=amtx::run
     //% blockHidden=true
     export function run(carrierHz: number, source: number, gain: number, depth: number): void {
-        // シミュレーターでは何もしない
+        // 本体が空だとシミュレーターがshimを探してエラーになるため、何もしない式を置く
         0;
     }
 
@@ -22,7 +22,7 @@ namespace amtx {
      * @param gain 感度(1〜16)
      * @param depth 変調度(10〜100%)
      */
-    //% blockId=amtx_start block="AM送信開始 搬送波 %khz kHz|入力 %source|感度 %gain|変調度 %depth %"
+    //% blockId=amtx_start block="AM送信開始 搬送波(kHz) %khz|入力 %source|感度 %gain|変調度(パーセント) %depth"
     //% khz.min=100 khz.max=1600 khz.defl=666
     //% gain.min=1 gain.max=16 gain.defl=2
     //% depth.min=10 depth.max=100 depth.defl=60
