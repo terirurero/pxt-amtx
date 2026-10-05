@@ -2,7 +2,9 @@ enum AmSource {
     //% block="2ピン(外部音声)"
     Pin2 = 0,
     //% block="内蔵マイク"
-    Mic = 1
+    Mic = 1,
+    //% block="搬送波のみ(テスト)"
+    CarrierOnly = 2
 }
 
 //% weight=100 color=#D4401F icon="\uf012" block="AM送信"

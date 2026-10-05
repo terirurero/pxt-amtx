@@ -13,6 +13,9 @@ namespace amtx {
 
 #if defined(NRF_PWM3) && defined(NRF_SAADC)
 
+// デバッグ用: 1行目のLEDで進行状況を表示する
+#define MARK(x) uBit.display.image.setPixelValue((x), 0, 255)
+
 static const int N = 32;  // 1音声サンプルあたりのPWM周期数
 static uint16_t bufA[N] __attribute__((aligned(4)));
 static uint16_t bufB[N] __attribute__((aligned(4)));
@@ -95,22 +98,27 @@ void run(int carrierHz, int source, int gain, int depth) {
     g_gain = gain;
     g_depth = depth;
 
-    // ---- ADC (SAADC) ----
-    uint32_t psel = (source == 1) ? 4 : 3;  // 4:AIN3(内蔵マイク P0.05) / 3:AIN2(2ピン P0.04)
-    if (source == 1) {
-        NRF_P0->DIRSET = (1u << 20);  // MIC_RUN
-        NRF_P0->OUTSET = (1u << 20);
+    MARK(0);  // run()に入った
+
+    // ---- ADC (SAADC) --- source=2(搬送波のみ)では使わない
+    if (source != 2) {
+        uint32_t psel = (source == 1) ? 4 : 3;  // 4:AIN3(内蔵マイク P0.05) / 3:AIN2(2ピン P0.04)
+        if (source == 1) {
+            NRF_P0->DIRSET = (1u << 20);  // MIC_RUN
+            NRF_P0->OUTSET = (1u << 20);
+        }
+        NRF_SAADC->ENABLE = 0;
+        NRF_SAADC->RESOLUTION = 2;  // 12bit
+        NRF_SAADC->OVERSAMPLE = 0;
+        NRF_SAADC->SAMPLERATE = 0;  // タスク駆動
+        NRF_SAADC->CH[0].PSELP = psel;
+        NRF_SAADC->CH[0].PSELN = 0;
+        NRF_SAADC->CH[0].CONFIG = (0u << 8) | (2u << 16);  // GAIN 1/6, 内部0.6V基準, TACQ 10us, 単端
+        NRF_SAADC->RESULT.PTR = (uint32_t)&adcRaw;
+        NRF_SAADC->RESULT.MAXCNT = 1;
+        NRF_SAADC->ENABLE = 1;
     }
-    NRF_SAADC->ENABLE = 0;
-    NRF_SAADC->RESOLUTION = 2;  // 12bit
-    NRF_SAADC->OVERSAMPLE = 0;
-    NRF_SAADC->SAMPLERATE = 0;  // タスク駆動
-    NRF_SAADC->CH[0].PSELP = psel;
-    NRF_SAADC->CH[0].PSELN = 0;
-    NRF_SAADC->CH[0].CONFIG = (0u << 8) | (2u << 16);  // GAIN 1/6, 内部0.6V基準, TACQ 10us, 単端
-    NRF_SAADC->RESULT.PTR = (uint32_t)&adcRaw;
-    NRF_SAADC->RESULT.MAXCNT = 1;
-    NRF_SAADC->ENABLE = 1;
+    MARK(1);  // ADC設定が終わった
 
     // ---- PWM (0ピン = P0.02) ----
     NRF_PWM_Type *pwm = pickPwm();
@@ -144,8 +152,13 @@ void run(int carrierHz, int source, int gain, int depth) {
     pwm->EVENTS_SEQSTARTED[0] = 0;
     pwm->EVENTS_SEQSTARTED[1] = 0;
     pwm->TASKS_SEQSTART[0] = 1;
+    MARK(2);  // PWMを起動した
+
+    // 搬送波のみ(テスト): PWMはDMAで勝手に回り続けるので戻ってよい
+    if (source == 2) return;
 
     // ---- 戻らないループ: 再生中でない方のバッファを更新 ----
+    int loops = 0;
     for (;;) {
         waitEv(&pwm->EVENTS_SEQSTARTED[0]);
         pwm->EVENTS_SEQSTARTED[0] = 0;
@@ -153,6 +166,10 @@ void run(int carrierHz, int source, int gain, int depth) {
         waitEv(&pwm->EVENTS_SEQSTARTED[1]);
         pwm->EVENTS_SEQSTARTED[1] = 0;
         fill(bufA);
+        if (++loops == 1) MARK(3);  // ループに入った
+        if ((loops & 0x3FF) == 0) {  // 約0.1秒ごとに右端を点滅(動作中の目印)
+            uBit.display.image.setPixelValue(4, 0, (loops & 0x400) ? 255 : 0);
+        }
     }
 }
 
