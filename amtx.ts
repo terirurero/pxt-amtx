@@ -11,6 +11,7 @@ namespace amtx {
     //% blockHidden=true
     export function run(carrierHz: number, source: number, gain: number, depth: number): void {
         // シミュレーターでは何もしない
+        0;
     }
 
     /**
